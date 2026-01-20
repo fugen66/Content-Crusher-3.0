@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Content Crusher 3.0</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="theme-color" content="#0ea5e9">
+
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;800&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --accent: #0ea5e9;
+            --warning: #f59e0b;
+            --text: #f8fafc;
+            --text-dim: #94a3b8;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .header { text-align: center; margin-bottom: 20px; }
+        .header h1 { font-family: 'JetBrains Mono', monospace; font-size: 1.8em; color: var(--accent); text-transform: uppercase; letter-spacing: -1px; }
+        .header p { color: var(--text-dim); font-size: 0.9em; margin-top: 5px; }
+
+        .container { width: 100%; max-width: 600px; }
+
+        .input-area { width: 100%; margin-bottom: 10px; position: relative; }
+        
+        textarea {
+            width: 100%; height: 150px; background: var(--card); border: 2px solid #334155;
+            border-radius: 15px; padding: 15px; color: var(--text); font-family: 'Inter', sans-serif;
+            font-size: 16px; resize: none; transition: 0.3s;
+        }
+        textarea:focus { outline: none; border-color: var(--accent); }
+
+        .char-counter {
+            text-align: right; font-size: 0.8em; color: var(--text-dim); margin-bottom: 20px;
+        }
+        .char-counter.limit { color: var(--warning); font-weight: bold; }
+
+        .grid-buttons {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 25px;
+        }
+
+        .mode-btn {
+            background: #334155; border: none; padding: 15px; border-radius: 12px;
+            color: var(--text); font-weight: 600; font-size: 0.95em; cursor: pointer;
+            transition: 0.2s; display: flex; flex-direction: column; align-items: center; gap: 5px;
+        }
+        .mode-btn span { font-size: 1.5em; }
+        .mode-btn.active { background: var(--accent); color: white; box-shadow: 0 0 15px rgba(14, 165, 233, 0.4); }
+        .btn-full { grid-column: span 2; background: #2b3544; }
+
+        .result-box {
+            background: #111827; border: 1px solid #334155; border-radius: 15px;
+            padding: 20px; position: relative; min-height: 100px; margin-bottom: 15px;
+        }
+        .result-label {
+            position: absolute; top: -10px; left: 15px; background: var(--accent);
+            color: white; padding: 2px 10px; border-radius: 5px; font-size: 0.7em; font-weight: 800; text-transform: uppercase;
+        }
+        .output-text {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.85em; color: #a5f3fc;
+            line-height: 1.5; white-space: pre-wrap; word-wrap: break-word;
+        }
+
+        .action-area { display: flex; flex-direction: column; gap: 10px; }
+        
+        .copy-btn {
+            width: 100%; background: var(--accent); border: none; padding: 15px;
+            border-radius: 12px; color: white; font-weight: 800; text-transform: uppercase; cursor: pointer; font-size: 1em;
+        }
+        .btn-clear { background: rgba(239, 68, 68, 0.15); border: 2px solid #ef4444; color: #fca5a5; }
+        
+        .parts-container { display: none; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
+        .part-btn {
+            min-width: 80px; flex: 1; background: #334155; border: 1px solid var(--warning); color: var(--warning);
+            padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.9em;
+        }
+        .part-btn:hover { background: var(--warning); color: #000; }
+        .part-btn.clicked { background: #064e3b; border-color: #4ade80; color: #4ade80; opacity: 0.5; }
+
+        .tooltip {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: #22c55e; color: white; padding: 15px 30px; border-radius: 50px;
+            font-weight: bold; display: none; z-index: 100;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Content Crusher 3.0</h1>
+        <p>Дробилка любого объёма</p>
+    </div>
+
+    <div class="container">
+        <div class="input-area">
+            <textarea id="inputText" placeholder="Вставь сюда текст (даже огромный)..." oninput="updateCounter()"></textarea>
+        </div>
+        <div class="char-counter" id="charCounter">0 символов</div>
+
+        <div class="grid-buttons">
+            <button class="mode-btn" onclick="setMode('essence')"><span>🍋</span> Суть</button>
+            <button class="mode-btn" onclick="setMode('telegram')"><span>✈️</span> Telegram</button>
+            <button class="mode-btn" onclick="setMode('reels')"><span>🎬</span> Reels</button>
+            <button class="mode-btn" onclick="setMode('story')"><span>📖</span> История</button>
+            <button class="mode-btn" onclick="setMode('flowers')"><span>🌸</span> Цветы</button>
+            <button class="mode-btn" onclick="setMode('book')"><span>📚</span> Книга</button>
+            <button class="mode-btn btn-full" onclick="setMode('provoke')"><span>🌶️</span> Провокатор</button>
+        </div>
+
+        <!-- Панель для длинных текстов -->
+        <div class="parts-container" id="partsContainer"></div>
+
+        <div class="result-box">
+            <span class="result-label" id="resultLabel">Промпт</span>
+            <div class="output-text" id="outputText">Здесь появится инструкция...</div>
+        </div>
+
+        <div class="action-area">
+            <button class="copy-btn" onclick="copyResult()">📋 Копировать</button>
+            <button class="copy-btn btn-clear" onclick="clearAll()">🗑️ Очистить всё</button>
+        </div>
+    </div>
+
+    <div class="tooltip" id="tooltip">Скопировано! 🚀</div>
+
+    <script>
+        const input = document.getElementById('inputText');
+        const output = document.getElementById('outputText');
+        const counter = document.getElementById('charCounter');
+        const partsContainer = document.getElementById('partsContainer');
+        const resultLabel = document.getElementById('resultLabel');
+        
+        // Увеличил лимит до 15000 символов (безопасный максимум для GPT-4)
+        const LIMIT = 15000; 
+        let currentPromptTemplate = ""; 
+
+        const prompts = {
+            'essence': "Твоя задача — выступить в роли профессионального редактора. Прочитай текст и выжми 'воду'.\nМне нужно:\n1. Главная мысль в одном предложении.\n2. 5 ключевых тезисов списком.\nТекст:\n[TEXT]",
+            'telegram': "Ты — Андрей Рудаков. Твой стиль: мужской, жесткий, поддерживающий. Напиши пост для Telegram.\nСтруктура:\n1. Цепляющий заголовок.\n2. Короткие абзацы.\n3. Вопрос в конце.\nТекст:\n[TEXT]",
+            'reels': "Преврати этот текст в сценарий Reels на 60 секунд.\nФормат:\n- [0-3 сек] Хук\n- [3-15 сек] Боль\n- [15-45 сек] Решение\n- [45-60 сек] Призыв\nТекст:\n[TEXT]",
+            'story': "Перепиши этот текст как увлекательную историю или метафору. Используй образы. Текст должен вызывать эмоции.\nТекст:\n[TEXT]",
+            'provoke': "Перепиши текст в провокационном, дерзком стиле. Вызови споры. Будь категоричным.\nТекст:\n[TEXT]",
+            'flowers': "Ты — SMM-маркетолог цветочного магазина. Напиши 4 варианта поста (Романтичный, Практичный, Эстетичный, Срочный) + хештеги.\nОписание букета:\n[TEXT]",
+            'book': "Ты — топовый книжный маркетолог.\nТвоя задача — написать продающий пост для КНИГИ.\nАЛГОРИТМ:\n1. Определи тему книги.\n2. Определи БОЛЬ аудитории.\n3. Напиши пост: Заголовок, Проблема, Надежда, Книга, Призыв.\nТекст:\n[TEXT]"
+        };
+
+        function updateCounter() {
+            const len = input.value.length;
+            counter.innerText = `${len} символов`;
+            if (len > LIMIT) {
+                counter.classList.add('limit');
+                counter.innerText += " (⚠️ Включаю режим нарезки!)";
+            } else {
+                counter.classList.remove('limit');
+            }
+        }
+
+        function setMode(mode) {
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+
+            const text = input.value.trim();
+            if (!text) {
+                output.innerText = "Сначала вставь текст!";
+                output.style.color = "#f87171";
+                return;
+            }
+
+            currentPromptTemplate = prompts[mode]; 
+
+            if (text.length > LIMIT) {
+                enableMultiStepMode(text);
+            } else {
+                disableMultiStepMode();
+                output.style.color = "#a5f3fc";
+                output.innerText = currentPromptTemplate.replace('[TEXT]', text);
+            }
+        }
+
+        function enableMultiStepMode(text) {
+            partsContainer.style.display = 'flex';
+            partsContainer.innerHTML = ""; 
+            resultLabel.innerText = "⚠️ РЕЖИМ СЕРИАЛА";
+            
+            // ИСПРАВЛЕННАЯ ЛОГИКА НАРЕЗКИ: Режем по 15000 символов, игнорируя абзацы
+            const chunks = text.match(new RegExp(`[\\s\\S]{1,${LIMIT}}`, 'g'));
+            
+            // Кнопки частей
+            chunks.forEach((chunk, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'part-btn';
+                btn.innerText = `Часть ${index + 1}`;
+                btn.onclick = function() {
+                    const msg = `Я отправляю тебе текст по частям. Это ЧАСТЬ ${index + 1} из ${chunks.length}. Просто скажи "Принято", не обрабатывай пока.\n\n${chunk}`;
+                    output.innerText = msg;
+                    output.style.color = "#a5f3fc";
+                    copyResult();
+                    this.classList.add('clicked'); // Помечаем как нажатую
+                    this.innerText = `Часть ${index + 1} ✅`;
+                };
+                partsContainer.appendChild(btn);
+            });
+
+            // Кнопка ФИНАЛ
+            const finalBtn = document.createElement('button');
+            finalBtn.className = 'part-btn';
+            finalBtn.style.background = '#0ea5e9';
+            finalBtn.style.color = 'white';
+            finalBtn.innerText = "🏁 ФИНАЛ";
+            finalBtn.onclick = () => {
+                const finalMsg = currentPromptTemplate.replace('[TEXT]', "[ИСПОЛЬЗУЙ ВЕСЬ ТЕКСТ, КОТОРЫЙ Я ОТПРАВИЛ ВЫШЕ В ЧАСТЯХ]");
+                output.innerText = finalMsg;
+                output.style.color = "#a5f3fc";
+                copyResult();
+            };
+            partsContainer.appendChild(finalBtn);
+
+            output.style.color = "#f59e0b";
+            output.innerText = `Текст огромный (${text.length} симв). Я разбил его на ${chunks.length} частей.\n\nИНСТРУКЦИЯ:\n1. Жми кнопки по порядку (они будут зеленеть).\n2. Вставляй в GPT.\n3. В конце нажми ФИНАЛ.`;
+        }
+
+        function disableMultiStepMode() {
+            partsContainer.style.display = 'none';
+            resultLabel.innerText = "ПРОМПТ";
+        }
+
+        function copyResult() {
+            const text = output.innerText;
+            if (text.includes("Вставь текст") || text.includes("Здесь появится")) return;
+            navigator.clipboard.writeText(text);
+            const tooltip = document.getElementById('tooltip');
+            tooltip.style.display = 'block';
+            setTimeout(() => tooltip.style.display = 'none', 1500);
+        }
+
+        function clearAll() {
+            input.value = "";
+            output.innerText = "Здесь появится волшебный промпт...";
+            output.style.color = "#a5f3fc"; 
+            disableMultiStepMode();
+            updateCounter();
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+        }
+    </script>
+</body>
+</html>
